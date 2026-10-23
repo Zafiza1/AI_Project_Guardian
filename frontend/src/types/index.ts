@@ -60,3 +60,37 @@ export interface GuardianSettings {
   max_output_bytes: number;
   max_concurrent_checks: number;
 }
+
+export type DiagnosisStatus = 'pending' | 'completed' | 'failed';
+
+export interface DiagnosisFinding {
+  problem_summary: string;
+  suspected_root_cause: string;
+  evidence: string[];
+  file_paths: string[];
+  line_numbers: string[];
+  confidence_level: 'high' | 'medium' | 'low';
+  confidence_explanation: string;
+  remediation_steps: string[];
+  verification_tests: string[];
+  missing_information: string[];
+  alternative_explanations: string[];
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  impact_assessment: string;
+}
+
+export interface Diagnosis {
+  id: number;
+  health_check_id: number;
+  status: DiagnosisStatus;
+  provider: string;
+  model: string;
+  findings: DiagnosisFinding | null;
+  error_message: string | null;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface DiagnosisRequest {
+  health_check_id: number;
+}

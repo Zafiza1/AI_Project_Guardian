@@ -46,6 +46,12 @@ class Settings:
     cors_origins: list[str] = field(default_factory=list)
     # Guardian never modifies repositories. This flag is informational and not configurable.
     read_only: bool = True
+    # AI Diagnosis settings
+    ai_provider: str = "ollama"
+    ai_model: str = "llama3.2"
+    ai_endpoint: str = "http://127.0.0.1:11434"
+    ai_timeout_seconds: int = 60
+    ai_max_evidence_bytes: int = 100_000
 
 
 def load_settings() -> Settings:
@@ -63,6 +69,11 @@ def load_settings() -> Settings:
         cors_origins=_split_roots(
             os.environ.get("GUARDIAN_CORS_ORIGINS", "http://localhost:5173;http://127.0.0.1:5173")
         ),
+        ai_provider=os.environ.get("GUARDIAN_AI_PROVIDER", "ollama"),
+        ai_model=os.environ.get("GUARDIAN_AI_MODEL", "llama3.2"),
+        ai_endpoint=os.environ.get("GUARDIAN_AI_ENDPOINT", "http://127.0.0.1:11434"),
+        ai_timeout_seconds=_int_env("GUARDIAN_AI_TIMEOUT_SECONDS", 60),
+        ai_max_evidence_bytes=_int_env("GUARDIAN_AI_MAX_EVIDENCE_BYTES", 100_000),
     )
 
 

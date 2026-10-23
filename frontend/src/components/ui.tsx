@@ -77,25 +77,29 @@ export function ErrorBanner({ message, onRetry, onDismiss }: { message: string; 
   );
 }
 
-const STATUS_STYLES: Record<CheckStatus | 'none', string> = {
+const STATUS_STYLES: Record<CheckStatus | 'none' | 'pending' | 'completed', string> = {
   running: 'bg-indigo-100 text-indigo-800 ring-indigo-600/20 dark:bg-indigo-500/10 dark:text-indigo-300 dark:ring-indigo-400/30',
   success: 'bg-emerald-100 text-emerald-800 ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-400/30',
   failed: 'bg-red-100 text-red-800 ring-red-600/20 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-400/30',
   timeout: 'bg-amber-100 text-amber-800 ring-amber-600/20 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-400/30',
   error: 'bg-fuchsia-100 text-fuchsia-800 ring-fuchsia-600/20 dark:bg-fuchsia-500/10 dark:text-fuchsia-300 dark:ring-fuchsia-400/30',
   none: 'bg-slate-100 text-slate-600 ring-slate-500/20 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-600/40',
+  pending: 'bg-blue-100 text-blue-800 ring-blue-600/20 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-400/30',
+  completed: 'bg-emerald-100 text-emerald-800 ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-400/30',
 };
 
-const STATUS_LABELS: Record<CheckStatus | 'none', string> = {
+const STATUS_LABELS: Record<CheckStatus | 'none' | 'pending' | 'completed', string> = {
   running: 'Running',
   success: 'Passed',
   failed: 'Failed',
   timeout: 'Timed out',
   error: 'Error',
   none: 'Never checked',
+  pending: 'Pending',
+  completed: 'Completed',
 };
 
-export function StatusBadge({ status }: { status: CheckStatus | null | undefined }) {
+export function StatusBadge({ status }: { status: CheckStatus | 'pending' | 'completed' | 'failed' | null | undefined }) {
   const key = status ?? 'none';
   return (
     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${STATUS_STYLES[key]}`}>

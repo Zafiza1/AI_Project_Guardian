@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import type { HealthCheck } from '../types';
+import type { Diagnosis, HealthCheck } from '../types';
 import { formatDuration, formatTimestamp } from '../utils/format';
-import { BranchIcon, Card, EmptyState, ErrorBanner, LoadingBlock, StatusBadge } from './ui';
+import { api } from '../api/client';
+import { BranchIcon, Button, Card, EmptyState, ErrorBanner, LoadingBlock, StatusBadge, Spinner } from './ui';
+import { DiagnosisDetail } from './DiagnosisDetail';
 
 interface HealthCheckResultsProps {
   healthChecks: HealthCheck[];
@@ -10,8 +12,18 @@ interface HealthCheckResultsProps {
   onRetry: () => void;
 }
 
-function CheckRow({ check, defaultOpen }: { check: HealthCheck; defaultOpen: boolean }) {
+function CheckRow({
+  check,
+  defaultOpen,
+  onDiagnose,
+}: {
+  check: HealthCheck;
+  defaultOpen: boolean;
+  onDiagnose: (check: HealthCheck) => void;
+}) {
   const [open, setOpen] = useState(defaultOpen);
+  const canDiagnose = check.status === 'failed' || check.status === 'timeout' || check.status === 'error';
+
   return (
     <li className="px-4 py-3">
       <button onClick={() => setOpen(!open)} className="flex w-full items-center gap-3 text-left" aria-expanded={open}>
@@ -65,6 +77,11 @@ function CheckRow({ check, defaultOpen }: { check: HealthCheck; defaultOpen: boo
               {check.output}
             </pre>
           )}
+          {canDiagnose && (
+            <Button variant="secondary" onClick={() => onDiagnose(check)} className="w-full py-2 text-xs">
+              Diagnose with AI
+            </Button>
+          )}
         </div>
       )}
     </li>
@@ -72,17 +89,71 @@ function CheckRow({ check, defaultOpen }: { check: HealthCheck; defaultOpen: boo
 }
 
 export function HealthCheckResults({ healthChecks, loading, error, onRetry }: HealthCheckResultsProps) {
+  const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
+  const [diagnosisLoading, setDiagnosisLoading] = useState(false);
+  const [diagnosisError, setDiagnosisError] = useState<string | null>(null);
+
+  const handleDiagnose = async (check: HealthCheck) => {
+    setDiagnosisLoading(true);
+    setDiagnosisError(null);
+    try {
+      const response = await api.requestDiagnosis({ health_check_id: check.id });
+      setDiagnosis(response);
+
+      // Poll for completion if pending
+      if (response.status === 'pending') {
+        const pollInterval = setInterval(async () => {
+          try {
+            const updated = await api.getDiagnosis(response.id);
+            setDiagnosis(updated);
+            if (updated.status !== 'pending') {
+              clearInterval(pollInterval);
+            }
+          } catch (e) {
+            clearInterval(pollInterval);
+            setDiagnosisError('Failed to poll diagnosis status');
+          }
+        }, 2000);
+      }
+    } catch (e) {
+      setDiagnosisError(e instanceof Error ? e.message : 'Failed to request diagnosis');
+    } finally {
+      setDiagnosisLoading(false);
+    }
+  };
+
+  if (diagnosis) {
+    return <DiagnosisDetail diagnosis={diagnosis} onClose={() => setDiagnosis(null)} />;
+  }
+
+  if (diagnosisLoading) {
+    return (
+      <Card>
+        <div className="flex items-center justify-center p-8">
+          <div className="flex items-center gap-3">
+            <Spinner />
+            <span className="text-sm text-slate-600 dark:text-slate-300">Requesting AI diagnosis...</span>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  if (diagnosisError) {
+    return <ErrorBanner message={diagnosisError} onRetry={() => setDiagnosisError(null)} />;
+  }
+
   if (error) return <ErrorBanner message={error} onRetry={onRetry} />;
   return (
     <Card>
       {loading && healthChecks.length === 0 ? (
         <LoadingBlock label="Loading run history…" />
       ) : healthChecks.length === 0 ? (
-        <EmptyState title="No health checks run yet" hint="Click “Run check” to perform the first one." />
+        <EmptyState title="No health checks run yet" hint="Click 'Run check' to perform the first one." />
       ) : (
         <ul className="divide-y divide-slate-100 dark:divide-slate-800">
           {healthChecks.map((check, i) => (
-            <CheckRow key={check.id} check={check} defaultOpen={i === 0} />
+            <CheckRow key={check.id} check={check} defaultOpen={i === 0} onDiagnose={handleDiagnose} />
           ))}
         </ul>
       )}

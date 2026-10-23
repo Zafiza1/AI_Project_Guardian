@@ -1,6 +1,8 @@
 import type {
   CheckCommand,
   DashboardSummary,
+  Diagnosis,
+  DiagnosisRequest,
   GuardianSettings,
   HealthCheck,
   Project,
@@ -74,4 +76,11 @@ export const api = {
   getHealthCheck: (checkId: number) => request<HealthCheck>(`/health-checks/${checkId}`),
   getHealthChecks: (projectId: number, limit = 50) =>
     request<HealthCheck[]>(`/projects/${projectId}/health-checks?limit=${limit}`),
+
+  /** Request an AI diagnosis for a failed health check. */
+  requestDiagnosis: (data: DiagnosisRequest) =>
+    request<Diagnosis>('/diagnoses', { method: 'POST', body: JSON.stringify(data) }),
+  getDiagnosis: (diagnosisId: number) => request<Diagnosis>(`/diagnoses/${diagnosisId}`),
+  getDiagnosesForHealthCheck: (healthCheckId: number, limit = 10) =>
+    request<Diagnosis[]>(`/diagnoses/health-check/${healthCheckId}?limit=${limit}`),
 };

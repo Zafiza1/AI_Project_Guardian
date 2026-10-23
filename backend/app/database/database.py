@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from pathlib import Path
 
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text, create_engine, event
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text, create_engine, event, JSON
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 from app.core.config import settings
@@ -68,6 +68,25 @@ class HealthCheck(Base):
     timestamp = Column(DateTime, default=utcnow, index=True)
 
     project = relationship("Project", back_populates="health_checks")
+    diagnoses = relationship("Diagnosis", back_populates="health_check", cascade="all, delete-orphan", passive_deletes=True)
+
+
+class Diagnosis(Base):
+    __tablename__ = "diagnoses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    health_check_id = Column(Integer, ForeignKey("health_checks.id", ondelete="CASCADE"), nullable=False, index=True)
+    # pending | completed | failed
+    status = Column(String(32), nullable=False)
+    provider = Column(String(64), nullable=False)
+    model = Column(String(64), nullable=False)
+    # Structured findings stored as JSON
+    findings = Column(JSON, nullable=True)
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+    completed_at = Column(DateTime, nullable=True)
+
+    health_check = relationship("HealthCheck", back_populates="diagnoses")
 
 
 def init_db():

@@ -62,12 +62,16 @@ export function AddProjectForm({ checkCommands, settings, onProjectAdded }: AddP
             </span>
           ) : (
             <>
-              <span className="font-medium">Permitted directories:</span>{' '}
-              {settings.allowed_roots.map((r) => (
-                <code key={r} className="mr-2 font-mono">
-                  {r}
-                </code>
-              ))}
+              <p className="font-medium">Permitted directories ({settings.allowed_roots.length}):</p>
+              <ul className="mt-1.5 flex flex-wrap gap-1.5">
+                {settings.allowed_roots.map((r) => (
+                  <li key={r}>
+                    <code className="inline-block rounded border border-slate-200 bg-white px-1.5 py-0.5 font-mono dark:border-slate-700 dark:bg-slate-900">
+                      {r}
+                    </code>
+                  </li>
+                ))}
+              </ul>
             </>
           )}
         </div>
